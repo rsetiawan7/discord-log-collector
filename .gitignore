@@ -1,3 +1,5 @@
 .env
 dist/
 node_modules/
+
+src/channels.json
