@@ -40,11 +40,19 @@ export const sendLogToChannel = (message: string): void => {
     return;
   }
 
-  const content = {
-    content: `\`${message.split(']: ')}\``, tts: false,
-  };
+  const squareBracketIndex = message.indexOf(']');
 
-  (channel as unknown as Discord.TextChannel).send(content)
+  if (squareBracketIndex < 0) {
+    if (DEBUG_ENABLED) {
+      console.log(`[DEBUG] Wrong format message. Expected: any square bracket. Found: ${message}`);
+    }
+
+    return;
+  }
+
+  const content = `\`${message.substring((squareBracketIndex + 3), (message.length - 1))}\``;
+
+  (channel as unknown as Discord.TextChannel).send({ content })
     .then((value: Discord.Message) => {
       if (DEBUG_ENABLED) {
         console.log(`[DEBUG] Message sent to channel ID ${DISCORD_CHANNEL_ID}`);
