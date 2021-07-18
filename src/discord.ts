@@ -62,7 +62,7 @@ export const sendLogToChannel = (message: string): void => {
         return;
       }
 
-      message = message.replace('#015', '');
+      message = message.replace(/#\d+$/g, '');
       const content = `\`${message.substring((squareBracketIndex + 3), (message.length - 1))}\``;
 
       (discordChan as unknown as Discord.TextChannel).send({ content })
