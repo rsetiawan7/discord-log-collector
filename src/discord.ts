@@ -53,17 +53,17 @@ export const sendLogToChannel = (message: string): void => {
 
     if (message.indexOf(tag) >= 0) {
       const squareBracketIndex = message.indexOf(']');
-    
+
       if (squareBracketIndex < 0) {
         if (DEBUG_ENABLED) {
           console.log(`[DEBUG] Wrong format message. Expected: any square bracket. Found: ${message}`);
         }
-    
+
         return;
       }
 
       message = message.replace(/#(033\[32m|033\[39m|015|01)/g, '');
-      const content = `\`${message.substring((squareBracketIndex + 3), (message.length - 1))}\``;
+      const content = `\`${message.substring((squareBracketIndex + 3), (message.length))}\``;
 
       (discordChan as unknown as Discord.TextChannel).send({ content })
         .then((value: Discord.Message) => {
@@ -94,7 +94,7 @@ client.login(DISCORD_BOT_TOKEN).then(async (value: string) => {
     if (tag === 'default') {
       continue;
     }
-    
+
     if (DEBUG_ENABLED) {
       console.log(`[DEBUG] Checking channel ID from env. "${tag}"`);
     }
