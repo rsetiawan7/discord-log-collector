@@ -63,7 +63,13 @@ export const sendLogToChannel = (message: string): void => {
       }
 
       message = message.replace(/#(033\[32m|033\[39m|015|01)/g, '');
-      const content = `\`${message.substring((squareBracketIndex + 3), (message.length))}\``;
+      let content = message;
+
+      if (message.indexOf('`') >= 0) {
+        content = `\`\`\`${message.substring((squareBracketIndex + 3), (message.length))}\`\`\``;
+      } else {
+        content = `\`${message.substring((squareBracketIndex + 3), (message.length))}\``;
+      }
 
       (discordChan as unknown as Discord.TextChannel).send({ content })
         .then((value: Discord.Message) => {
