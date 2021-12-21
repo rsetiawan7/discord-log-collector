@@ -1,16 +1,17 @@
 import dotenv from 'dotenv';
 import Discord from 'discord.js';
+import * as _Channels from './channels.json';
 
 dotenv.config();
 
 let loggedIn = false;
-let isTextChannel = false;
-let channel: Discord.Channel | Discord.TextChannel | undefined;
+const Channels: { [key: string]: string } = _Channels;
+const isTextChannel: { [key: string]: boolean } = {};
+const discordChannel: { [key: string]: Discord.Channel | Discord.TextChannel | undefined } = {};
 
 const {
   DEBUG_ENABLED,
   DISCORD_BOT_TOKEN,
-  DISCORD_CHANNEL_ID,
 } = process.env;
 
 const client = new Discord.Client();
@@ -24,66 +25,113 @@ export const sendLogToChannel = (message: string): void => {
     return;
   }
 
-  if (!DISCORD_CHANNEL_ID) {
-    if (DEBUG_ENABLED) {
-      console.log('[DEBUG] Channel ID not configured properly.');
+  for (const tag of Object.keys(Channels)) {
+    if (tag === 'default') {
+      continue;
     }
 
-    return;
-  }
+    const channelId = Channels[tag];
+    const discordChan = discordChannel[tag];
 
-  if (!isTextChannel) {
-    if (DEBUG_ENABLED) {
-      console.log(`[DEBUG] Channel ID ${DISCORD_CHANNEL_ID} is not a text channel.`);
-    }
-
-    return;
-  }
-
-  const squareBracketIndex = message.indexOf(']');
-
-  if (squareBracketIndex < 0) {
-    if (DEBUG_ENABLED) {
-      console.log(`[DEBUG] Wrong format message. Expected: any square bracket. Found: ${message}`);
-    }
-
-    return;
-  }
-
-  const content = `\`${message.substring((squareBracketIndex + 3), (message.length - 1))}\``;
-
-  (channel as unknown as Discord.TextChannel).send({ content })
-    .then((value: Discord.Message) => {
+    if (!discordChan) {
       if (DEBUG_ENABLED) {
-        console.log(`[DEBUG] Message sent to channel ID ${DISCORD_CHANNEL_ID}`);
-        console.log(value);
+        console.log(`[DEBUG] Channel ID "${channelId}" for env. "${tag}" not configured properly.`);
       }
-    })
-    .catch((reason) => {
-      console.warn(`Failed to send content: ${reason}`);
-    });
+
+      return;
+    }
+
+    const textChannel = isTextChannel[tag];
+
+    if (!textChannel) {
+      if (DEBUG_ENABLED) {
+        console.log(`[DEBUG] Channel ID "${channelId}" for env. "${tag}" is not a text channel.`);
+      }
+
+      return;
+    }
+
+    if (message.indexOf(tag) >= 0) {
+      const squareBracketIndex = message.indexOf(']');
+
+      if (squareBracketIndex < 0) {
+        if (DEBUG_ENABLED) {
+          console.log(`[DEBUG] Wrong format message. Expected: any square bracket. Found: ${message}`);
+        }
+
+        return;
+      }
+
+      message = message.replace(/#(033\[32m|033\[39m|015|01)/g, '');
+      let content = message;
+
+      if (message.indexOf('`') >= 0) {
+        content = `\`\`\`${message.substring((squareBracketIndex + 3), (message.length))}\`\`\``;
+      } else {
+        content = `\`${message.substring((squareBracketIndex + 3), (message.length))}\``;
+      }
+
+      (discordChan as unknown as Discord.TextChannel).send({ content })
+        .then((value: Discord.Message) => {
+          if (DEBUG_ENABLED) {
+            console.log(`[DEBUG] Message sent to channel ID ${Channels[tag]}`);
+            console.log(value);
+          }
+        })
+        .catch((reason) => {
+          console.warn(`Failed to send content: ${reason}`);
+        });
+
+      return;
+    }
+  }
+
+  console.warn(`[WARN] Message not classified. Message: ${message}`);
 }
 
 client.login(DISCORD_BOT_TOKEN).then(async (value: string) => {
-  if (!DISCORD_CHANNEL_ID) {
+  if (!Channels) {
     if (DEBUG_ENABLED) {
-      throw Error('Channel ID not configured properly.');
+      throw Error('Channel IDs not configured properly.');
     }
   }
 
-  channel = await client.channels.fetch(DISCORD_CHANNEL_ID as string);
+  for (const tag of Object.keys(Channels)) {
+    if (tag === 'default') {
+      continue;
+    }
 
-  if (!channel) {
-    console.warn(`Channel ID ${DISCORD_CHANNEL_ID} not found.`);
-  } else {
-    if (!(channel as unknown as Discord.Channel).isText()) {
-      console.warn(`Channel ID ${DISCORD_CHANNEL_ID} is not a text channel.`);
+    if (DEBUG_ENABLED) {
+      console.log(`[DEBUG] Checking channel ID from env. "${tag}"`);
+    }
+
+    const channelId = Channels[tag] as string;
+
+    if (DEBUG_ENABLED) {
+      console.log(`[DEBUG] Channel ID from env. "${tag}": ${JSON.stringify(channelId)}`);
+    }
+
+    const channel = await client.channels.fetch(channelId as string);
+
+    if (DEBUG_ENABLED) {
+      console.log(`[DEBUG] Fetch result env. "${tag}" from channel ID "${channelId}": ${channel}`);
+    }
+
+    if (!channel) {
+      console.warn(`Channel ID "${channelId}" in env. "${tag}" not found.`);
     } else {
-      loggedIn = true;
-      isTextChannel = true;
-      console.info(`Logged in -> ${value}`);
+      if (!(channel as unknown as Discord.Channel).isText()) {
+        isTextChannel[tag] = false;
+        console.warn(`Channel ID "${channelId}" in env. "${tag}" is not a text channel.`);
+      } else {
+        discordChannel[tag] = channel;
+        isTextChannel[tag] = true;
+      }
     }
   }
+
+  loggedIn = true;
+  console.info(`Logged in -> ${value}`);
 }).catch((reason: any) => {
   console.warn(`Failed to login -> ${reason}`);
 });
