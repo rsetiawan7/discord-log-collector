@@ -2,4 +2,4 @@
 dist/
 node_modules/
 
-src/channels.json
+conf.json

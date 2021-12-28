@@ -1,0 +1,13 @@
+{
+  "debugEnabled": true,
+  "host": "127.0.0.1",
+  "port": 2020,
+  "discordBotToken": "your_token",
+  "collectors": [
+    {
+      "tag": "ragemp_live",
+      "contains": "error",
+      "channelId": "your_channel_id"
+    }
+  ]
+}
