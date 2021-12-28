@@ -1,4 +1,4 @@
-import config from '../conf.json';
+import config from './conf.json';
 import Discord from 'discord.js';
 import { Logger } from './logger';
 

@@ -1,5 +1,5 @@
 import dgram from 'dgram';
-import config from '../conf.json';
+import config from './conf.json';
 import { sendLogToChannel } from './discord';
 import { Logger } from './logger';
 

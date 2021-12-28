@@ -1,5 +1,5 @@
 // tslint:disable no-console
-import config from '../conf.json';
+import config from './conf.json';
 
 const {
   debugEnabled: DEBUG_ENABLED,

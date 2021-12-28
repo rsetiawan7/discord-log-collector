@@ -2,4 +2,4 @@
 dist/
 node_modules/
 
-conf.json
+src/conf.json
